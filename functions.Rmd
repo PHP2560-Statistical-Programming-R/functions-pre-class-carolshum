@@ -5,8 +5,9 @@ date: "September 29, 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
 ```
 
 
@@ -99,7 +100,49 @@ A. Create a function called standardize.me() that takes a numeric vector as an a
 B. Assign all the numeric columns of the original WCGS dataset to a new dataset called WCGS.new.
 C. Using a loop and your new function, standardize all the variables WCGS.new dataset.
 D. What should the mean and standard deviation of all your new standardized variables be? Test your prediction by running a loop
+```{r}
+#a
+standardize.me<-function(var){
+  m=mean(var,na.rm=TRUE)
+  s=sd(var,na.rm = TRUE)
+  x=(var-m)/s
+  final=matrix(x,ncol=1)
+  return(final)
+}
 
+#b
+choosedata<-function(x){
+  keep=matrix(c(seq(1:16),rep(0,16)), nrow=ncol(wcgs))
+  for (i in 1:ncol(x)){
+    if (class(x[,i])=="integer"|class(x[,i])=="numeric"){ 
+      keep[i,2]=1
+      }
+  }
+  keep=keep[keep[,2]==1,1]
+  return(keep)
+}
+
+ #c
+keep=choosedata(wcgs)
+WCGS.new<-wcgs[,c(keep)]
+  for (i in 1:ncol(WCGS.new)){
+    temp=standardize.me(WCGS.new[,i])
+    WCGS.new=cbind(WCGS.new,temp)
+  }
+names(WCGS.new)[(length(keep)+1):ncol(WCGS.new)]<-c(names(WCGS.new)[1:length(keep)])
+WCGS.new=WCGS.new[,(length(keep)+1):ncol(WCGS.new)]
+str(WCGS.new)
+
+#d
+mean_table=matrix(0, ncol=ncol(WCGS.new))
+sd_table=matrix(0, ncol=ncol(WCGS.new))
+for (i in 1:ncol(WCGS.new)){ 
+  mean_table[,i]=mean(WCGS.new[,i], na.rm = TRUE)
+  sd_table[,i]=sd(WCGS.new[,i], na.rm = TRUE)
+}
+mean_table
+sd_table
+```
 
 
 
@@ -108,3 +151,31 @@ D. What should the mean and standard deviation of all your new standardized vari
 A. Using a loop, calculate the mean weight of the subjects separated by the type of CHD they have.
 B. Now do the same thing, but now don’t use a loop
 
+```{r}
+#a
+calc=matrix(,nrow=nrow(wcgs), ncol=4)
+for( i in 1:nrow(wcgs)){
+  if(wcgs$typchd69[i]==names(table(wcgs$typchd69))[1]){
+    calc[i,1]=wcgs[i,4]
+  }else if(wcgs$typchd69[i]==names(table(wcgs$typchd69))[2]){
+    calc[i,2]=wcgs[i,4]
+  }else if(wcgs$typchd69[i]==names(table(wcgs$typchd69))[3]){ 
+    calc[i,3]=wcgs[i,4]
+  }else{
+    calc[i,4]=wcgs[i,4]
+  }
+}
+
+weight_means=matrix(0, ncol=4)
+for(i in 1:ncol(calc)){
+  weight_means[i]=mean(calc[,i], na.rm = TRUE)
+}
+weight_means=data.frame(weight_means)
+names(weight_means)<-c(names(table(wcgs$typchd69)))
+
+weight_means
+
+#b
+library(dplyr)
+wcgs %>% group_by(typchd69) %>% summarise(mean(weight, rm.na=TRUE))
+```
